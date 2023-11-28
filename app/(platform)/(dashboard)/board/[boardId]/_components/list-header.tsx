@@ -8,12 +8,14 @@ import { useRouter } from 'next/navigation';
 import { ElementRef, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { useEventListener } from 'usehooks-ts';
+import { ListOptions } from './list-options';
 
 interface ListHeaderProps {
   data: List;
+  onAddCard: () => void;
 }
 
-export const ListHeader = ({ data }: ListHeaderProps) => {
+export const ListHeader = ({ data, onAddCard }: ListHeaderProps) => {
   const [title, setTitle] = useState(data.title);
   const [isEditing, setIsEditing] = useState(false);
 
@@ -81,6 +83,7 @@ export const ListHeader = ({ data }: ListHeaderProps) => {
             defaultValue={title}
             className='text-sm px-[7px] py-1 h-7 font-medium border-transparent hover:border-input focus:border-input transition truncate bg-transparent focus:bg-white'
           />
+          <button type='submit' hidden></button>
         </form>
       ) : (
         <div
@@ -90,6 +93,7 @@ export const ListHeader = ({ data }: ListHeaderProps) => {
           {title}
         </div>
       )}
+      <ListOptions data={data} onAddCard={onAddCard} />
     </div>
   );
 };

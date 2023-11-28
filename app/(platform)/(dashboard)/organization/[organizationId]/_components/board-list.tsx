@@ -36,7 +36,7 @@ export const BoardList = async () => {
             className='group relative aspect-video bg-no-repeat bg-center bg-cover bg-sky-700 rounded-sm h-full w-full p-2'
             style={{ backgroundImage: `url(${board.imageThumbUrl})` }}
           >
-            <div className='absolute inset-0 bg-black/30 group-hover:bg-black/40 transition' />
+            <div className='absolute inset-0 bg-black/30 group-hover:bg-black/40 transition rounded-sm' />
             <p className='font-semibold text-white relative'>{board.title}</p>
           </Link>
         ))}
