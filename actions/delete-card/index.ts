@@ -6,7 +6,7 @@ import { auth } from '@clerk/nextjs';
 import { db } from '@/lib/db';
 import { createSafeAction } from '@/lib/create-safe-action';
 import { InputType, ReturnType } from './types';
-import { UpdateBoard } from './schema';
+import { DeleteCard } from './schema';
 import { createAuditLog } from '@/lib/create-audit-log';
 import { ACTION, ENTITY_TYPE } from '@prisma/client';
 
@@ -19,36 +19,40 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const { title, id } = data;
+  const { id, boardId } = data;
 
-  let board;
+  let card;
 
   try {
-    board = await db.board.update({
+    card = await db.card.delete({
       where: {
         id,
-        orgId,
-      },
-      data: {
-        title,
+        list: {
+          board: {
+            orgId,
+          },
+        },
       },
     });
 
     await createAuditLog({
-      entityId: board.id,
-      entityTitle: board.title,
-      entityType: ENTITY_TYPE.BOARD,
-      action: ACTION.UPDATE,
+      entityId: card.id,
+      entityTitle: card.title,
+      entityType: ENTITY_TYPE.CARD,
+      action: ACTION.DELETE,
     });
   } catch (error) {
+    console.log(error);
     return {
-      error: 'Failed to update',
+      error: 'Failed to delete',
     };
   }
 
-  revalidatePath(`/board/${id}`);
+  revalidatePath(`/board/${boardId}`);
 
-  return { data: board };
+  return {
+    data: card,
+  };
 };
 
-export const updateBoard = createSafeAction(UpdateBoard, handler);
+export const deleteCard = createSafeAction(DeleteCard, handler);

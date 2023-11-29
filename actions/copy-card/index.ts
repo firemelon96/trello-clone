@@ -6,7 +6,7 @@ import { auth } from '@clerk/nextjs';
 import { db } from '@/lib/db';
 import { createSafeAction } from '@/lib/create-safe-action';
 import { InputType, ReturnType } from './types';
-import { CreateList } from './schema';
+import { CopyCard } from './schema';
 import { createAuditLog } from '@/lib/create-audit-log';
 import { ACTION, ENTITY_TYPE } from '@prisma/client';
 
@@ -19,55 +19,62 @@ const handler = async (data: InputType): Promise<ReturnType> => {
     };
   }
 
-  const { title, boardId } = data;
+  const { id, boardId } = data;
 
-  let list;
+  let card;
 
   try {
-    const board = await db.board.findUnique({
+    const cardToCopy = await db.card.findUnique({
       where: {
-        id: boardId,
-        orgId,
+        id,
+        list: {
+          board: {
+            orgId,
+          },
+        },
       },
     });
 
-    if (!board) {
+    if (!cardToCopy) {
       return {
-        error: 'Board not found',
+        error: 'Card not found',
       };
     }
 
-    const lastList = await db.list.findFirst({
-      where: { boardId: boardId },
+    const lastCard = await db.card.findFirst({
+      where: { listId: cardToCopy.listId },
       orderBy: { order: 'desc' },
       select: { order: true },
     });
 
-    const newOrder = lastList ? lastList.order + 1 : 1;
+    const newOrder = lastCard ? lastCard.order + 1 : 1;
 
-    list = await db.list.create({
+    card = await db.card.create({
       data: {
-        title,
-        boardId,
+        title: `${cardToCopy.title} - Copy`,
+        description: cardToCopy.description,
         order: newOrder,
+        listId: cardToCopy.listId,
       },
     });
 
     await createAuditLog({
-      entityId: list.id,
-      entityTitle: list.title,
-      entityType: ENTITY_TYPE.LIST,
+      entityId: card.id,
+      entityTitle: card.title,
+      entityType: ENTITY_TYPE.CARD,
       action: ACTION.CREATE,
     });
   } catch (error) {
     return {
-      error: 'Failed to update',
+      error: 'Failed to copy',
     };
   }
 
   revalidatePath(`/board/${boardId}`);
 
-  return { data: list };
+  return {
+    data: card,
+  };
 };
 
-export const createList = createSafeAction(CreateList, handler);
+export const copyCard = createSafeAction(CopyCard, handler);
